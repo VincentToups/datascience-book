@@ -60,6 +60,6 @@ advice: write code by hand for awhile. It will help you learn.
 In my experience AI doesn't really eliminate any of the things you need to be an effective developer - you still need to know what tools to use, how they work, and what you want to do with them. AI just lets you move over this material faster in some situations, but, so far, it cannot even liberate you from needing to know what you are doing. 
 ```
 So you can use AI to write code, but I will still expect you to demonstrate
-understand the code if I ask you about it in class.
+understanding of the code if I ask you about it in class.
 
 Let's learn ::class_part:how class participation works::.
