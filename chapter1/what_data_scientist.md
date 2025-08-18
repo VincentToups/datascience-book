@@ -95,5 +95,7 @@ by digging around in enough data we can do something useful with it.
 Conclusion
 ----------
 
+:genimg:nightmarish unctious (but well lit) sewer of floating garbage::
+
 Thus the data scientist is an explorer of the data-sphere. The data sphere is, 
 for the most part, a ::garbage:nightmarish sewer of floating garbage::.

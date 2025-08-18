@@ -12,15 +12,15 @@ Here is how this works:
 1. if you answer the question you get your participation point, regardless of
 how you answer the question. So basically if you are here and you utter
 something you get your point.
-2. Answers will be given a number of stars or a poop. One star is the default
+2. Answers will be given a number of stars or an emoji. One star is the default
 for any answer and meets your basic participation requirements. But any number
 of stars in addition to that can negate a missed day of class or a failure to
-answer. But poops negate stars.
+answer. But emoji negate stars.
 
 The basic idea is thus: if I call on you, do your best to answer the question
 or provide a strategy for how you would answer the question if you weren't on 
-the spot. This will be enough. Glib answers will bring the poop, but great
-answers will defray the occasional moment of zen-like blankness or missed class.
+the spot. This will be enough. Glib answers will force me to assign a pejorative 
+emoji. You still get your participation grade, however.
 
 Students are chosen randomly via this system in a weighted way, so if you get
 unlucky and are chosen a few times in order your chances of getting chosen go 

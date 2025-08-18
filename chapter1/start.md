@@ -4,10 +4,7 @@ Lecture 1
 What is a data scientist?
 -------------------------
 
-:genimg:a data scientist::
-:genimg:another data scientist::
-:genimg:and another data scientist::
-:genimg:and another data scientist::
+:genimg:Hello World!::
 
 Welcome and Front Matter
 ------------------------
@@ -21,6 +18,22 @@ on Tuesday.
 
 Class is in McGavran-Greenberg Hall - 1301 from 3:35pm to 4:50pm.
 Lab is usually at 2pm but presently I don't have the room assignment.
+
+Office Hours: Friday at 4pm.
+
+Me
+--
+
+I am Dr Vincent Toups.
+
+1. Phd, Physics
+2. Cajunish Guy
+3. Father
+4. All-rounder type.
+
+https://www.youtube.com/watch?v=1lynozK_DTk
+https://featurecreeps.itch.io/corpsewizard
+
 
 How the Course Works
 --------------------
@@ -62,4 +75,4 @@ In my experience AI doesn't really eliminate any of the things you need to be an
 So you can use AI to write code, but I will still expect you to demonstrate
 understanding of the code if I ask you about it in class.
 
-Let's learn ::class_part:how class participation works::.
+Let's learn :next:class_part:how class participation works::.

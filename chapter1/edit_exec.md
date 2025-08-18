@@ -6,6 +6,13 @@ This class will involve writing a lot of code.
 ```sidebar
 Even though nowadays AI writes a lot of code for us, a good text editor
 and the knowledge of how to use it is still indespendible.
+
+I use
+
+https://www.gnu.org/software/emacs/
+https://www.vim.org/
+
+
 ```
 
 Code appears in our book in blocks like this:
