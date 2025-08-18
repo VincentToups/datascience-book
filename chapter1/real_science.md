@@ -40,7 +40,7 @@ previous analysis we did, we introduce an opportunity for us to bias the result
 and even if we are diligent, we can find that with enough such choices we end up
 with a positive result _by chance_. 
 
-Eg: the Jelley Bean problem:
+e.g.: the Jelly Bean problem:
 
 ![](https://imgs.xkcd.com/comics/significant.png)
 We will get into this when we talk about data science ethics! But for now
@@ -91,4 +91,3 @@ https://en.wikipedia.org/wiki/Git
 
 But there is also the issue of :next:running_code:running the code at any one of
 those historical moments.::
-

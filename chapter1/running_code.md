@@ -3,10 +3,12 @@ Being Nice
 
 The previous stuff was a matter of scientific ethics and practice. If you can't
 explain how your results looked 5 months ago when you published a paper, you are
-just don't bad science.
+just doing bad science.
 
 But just keeping a version history of our repository isn't enough. We also need
 to be able to actually _run_ the code when we pick out a specific time.
+
+:student-select:Why did you decide to take this class?; ../students.json::
 
 In this class we will solve this problem with a build system, which works like 
 this:

@@ -34,7 +34,7 @@ renderArcDiagram("statisticians","Design Experiment Data Analysis Claims".split(
 
 ```
 Then we publish and our review comes back clean and we get the next grant
-and we're famous. We never wept in graduate school it was a totally cool
-and normal time which didn't ruin on relationships and lives.
+and we're famous. We never wept in graduate school; it was a totally cool
+and normal time that didn’t ruin our relationships and lives.
 
-:next:real_science:Of course its usually not like that.::
+:next:real_science:Of course it's usually not like that.::

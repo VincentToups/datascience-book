@@ -19,14 +19,16 @@ on Tuesday.
 Class is in McGavran-Greenberg Hall - 1301 from 3:35pm to 4:50pm.
 Lab is usually at 2pm but presently I don't have the room assignment.
 
+Lab is at 2310 MG.
+
 Office Hours: Friday at 4pm.
 
 Me
 --
 
-I am Dr Vincent Toups.
+I am Dr. Vincent Toups.
 
-1. Phd, Physics
+1. PhD, Physics
 2. Cajunish Guy
 3. Father
 4. All-rounder type.
@@ -34,6 +36,7 @@ I am Dr Vincent Toups.
 https://www.youtube.com/watch?v=1lynozK_DTk
 https://featurecreeps.itch.io/corpsewizard
 
+![](felix.png)
 
 How the Course Works
 --------------------
@@ -58,15 +61,15 @@ transition: before a few years ago if you wanted to talk with something it HAD
 to be a person. Now we have these AIs. Crazy, right?
 
 Anyway, I let people use AI in this course because, as far as I can tell, they
-can't reall help you. AI can write code but I'm still very sure that it can't really
+can't really help you. AI can write code but I'm still very sure that it can't really
 understand it.
 
-Data Science, more than most disciplines which require coding, is about glueing
+Data Science, more than most disciplines which require coding, is about gluing
 stuff together. So AI is more useful, perhaps, here. But data science is way
 more about understanding what is happening than writing code, so it can't help
 you with that. 
 
-I recommend asking AI's why a lot and being skeptical. If you wany my real
+I recommend asking AIs why a lot and being skeptical. If you want my real
 advice: write code by hand for awhile. It will help you learn.
 
 ```sidebar

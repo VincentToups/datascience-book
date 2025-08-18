@@ -9,13 +9,13 @@ But what does this enigmatic widget mean?
 
 Here is how this works:
 
-1. if you answer the question you get your participation point, regardless of
+1. If you answer the question you get your participation point, regardless of
 how you answer the question. So basically if you are here and you utter
 something you get your point.
 2. Answers will be given a number of stars or an emoji. One star is the default
 for any answer and meets your basic participation requirements. But any number
 of stars in addition to that can negate a missed day of class or a failure to
-answer. But emoji negate stars.
+answer. But emojis negate stars.
 
 The basic idea is thus: if I call on you, do your best to answer the question
 or provide a strategy for how you would answer the question if you weren't on 
@@ -28,19 +28,20 @@ down.
 
 You might be interested in how this code works. 
 
-1. students are sorted in order of how many times they've been called on.
+1. Students are sorted in order of how many times they've been called on.
 2. 85% of the time we select the student least recently called upon
 3. 10% of the time we select a student randomly from the 50% least recently
 called upon
 4. 5% of the time we sample uniformly.
 
 Here is a python simulation of the process. Assuming we ask a question every
-three minutes, the thing we are interested in the is the distribution of 
+three minutes, the thing we are interested in is the distribution of 
 the smallest interval between questions. We want this to have a high variance 
 so that you have to stay on your toes!
 ```js browser
 import {setupStudentChooser} from "/fs/book/js/student_selector.js"
-setupStudentChooser("student_chooser","Why did you decided to talk this class in particular?");
+setupStudentChooser("student_chooser","Why did you decide to take this class in particular?","/fs/book/bios611/students.json");
+
 
 ```
 

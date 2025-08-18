@@ -5,7 +5,7 @@ This class will involve writing a lot of code.
 
 ```sidebar
 Even though nowadays AI writes a lot of code for us, a good text editor
-and the knowledge of how to use it is still indespendible.
+and the knowledge of how to use it is still indispensable.
 
 I use
 
@@ -36,11 +36,11 @@ or even create new files by clicking a section and pressing CTRL-C CTRL-C twice
 in rapid succession. 
 
 Files are executed either in the current directory or in the nearest parent 
-directory above which contains a git repository or a .project file. This
-will make more sense when we cover unix stuff like directories, executables, etc.
+directory above which contains a Git repository or a .project file. This
+will make more sense when we cover Unix stuff like directories, executables, etc.
 
-Futhermore, we will sometimes capture output from a file and put it into the
-current document. We can do this be enclosing that output in `<md>` and `</md>`
+Furthermore, we will sometimes capture output from a file and put it into the
+current document. We can do this by enclosing that output in `<md>` and `</md>`
 tags.
 
 Now that that preliminary material is out of the way:

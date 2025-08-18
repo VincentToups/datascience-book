@@ -5,22 +5,22 @@ This is the short version. A Container is just the tech buzzword for what you
 can think of as a "virtual computer."
 
 Docker/Podman (which basically I am going to use interchangeably as far as casual
-nomeclature is concerned) solve the following problem:
+nomenclature is concerned) solve the following problem:
 
 When we have a data analysis it has to take place in a specific _context_. It needs
-software libraries installed, basically. And these set ups can be quite elaborate
-and even brittle. Before container's we'd pass around complicated documents
+software libraries installed, basically. And these setups can be quite elaborate
+and even brittle. Before containers we'd pass around complicated documents
 describing exactly how to get a system configured to do an analysis.
 
 You'd try to do this, but then you'd make a mistake halfway through and that would
-break your system or leave it in a weir state without any easy way to undo
+break your system or leave it in a weird state without any easy way to undo
 it. Maybe you'd get it working but it wouldn't give the same results, etc, etc.
 
 It sucks.
 
 Containers allow us to _describe_ the environment we need to do an analysis. The
 system then _builds_ that environment (or pulls it from the cloud) and we work
-in that container. This has huge benefits. If we screw up our Container its no
+in that container. This has huge benefits. If we screw up our Container it's no
 big deal. We can throw it away and rebuild it. It also protects our host operating
 system from any messes we might make in the container.
 
@@ -169,7 +169,7 @@ CMD ["/bin/bash"]
 
 ```
 
-To really understand what a Dockerfile says, we need to know a little unix. We'll get there.
-But Docker is also really handy because you can use it to just start a unix shell to experiment
+To really understand what a Dockerfile says, we need to know a little Unix. We'll get there.
+But Docker is also really handy because you can use it to just start a Unix shell to experiment
 with for the early parts of this course and you can be sure you won't screw 
 up your host system.
