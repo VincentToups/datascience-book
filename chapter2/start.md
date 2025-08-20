@@ -4,8 +4,8 @@ Lecture 2
 
 An overview of the tools we will use in the course.
 
-Think of this as a high level overview of the tools we will use in the class
-so that its not so overwhelming when we cover them in detail.
+Think of this as a high-level overview of the tools we will use in the class
+so that it's not so overwhelming when we cover them in detail.
 
 Technical Tools
 ---------------
@@ -20,18 +20,18 @@ These tools are:
 6. R (a statistical programming language)
 7. Python (a general purpose programming language)
 8. SQL (a programming language just for querying databases)
-9. Markdown, Latex (ways of authoring results)
+9. Markdown, LaTeX (ways of authoring results)
 
 Data Science Related Stuff
 --------------------------
 
-1. dimensionality reduction (how get a look at data with our little 2d brains)
+1. dimensionality reduction (how to get a look at data with our little 2d brains)
 2. clustering (how to find groups in data)
 3. regression and classification (if you know the groups, how do you assign a point to them)
 4. visualization with ggplot (how to make good visualizations)
 5. model selection
 
-We are going to try and do all these things by constructing a project as we go.
+We are going to try to do all these things by constructing a project as we go.
 But today we are just going to give a brief introduction to all these ideas.
 
 Starting with the :next:shell:the unix/linux shell::.

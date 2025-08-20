@@ -1,7 +1,7 @@
 Makefiles
 =========
 
-Nothing beats looking at a Makefile to get a sense for why they are valuable.
+Nothing beats looking at a Makefile to get a sense of why it is valuable.
 
 ```Makefile 
 # Makefile

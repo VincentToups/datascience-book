@@ -1,11 +1,11 @@
 Git
 ===
 
-Version control is much, much, more than just a backup of your repository.
+Version control is much, much more than just a backup of your repository.
 
 The fundamental technology beneath version control is the patch/diff utility.
 
-For one thing it can give us very detailed history of a project:
+For one thing, it can give us a very detailed history of a project:
 
 ```bash 
 git log -n 10 --stat | cat
@@ -86,7 +86,7 @@ And lose the name of action.
 ```bash file=showdiff.sh
 diff -u version2.txt version1.txt
 ```
-If you use git you eventually have this level of granular understanding of what
+If you use git, you eventually have this level of granular understanding of what
 your code has done over time. Extremely valuable for both understanding a new
 codebase and maintaining an old one.
 

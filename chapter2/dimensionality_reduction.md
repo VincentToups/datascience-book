@@ -101,6 +101,6 @@ ggmd(p_scatter)
 write_csv(scores, "projection.csv");
 
 ```
-Ok, so we can see that there are just three types of voltage traces. 
+OK, so we can see that there are just three types of voltage traces. 
 
-We can use ::clustering:clustering:: to get which traces belong in which cluster.
+We can use ::clustering:clustering:: to see which traces belong in which cluster.

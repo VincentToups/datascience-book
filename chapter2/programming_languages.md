@@ -12,7 +12,7 @@ What I will try to teach you is how to think about programming in general
 and hopefully, if I succeed, you'll be comfortable picking up any language
 that you want except perhaps for the really weird ones.
 
-For data scientists in particular we just mostly glue methods together so our
+For data scientists in particular, we just mostly glue methods together, so our
 programming is usually very simple. But not always!
 
 ```r file=little_scheme.scm
@@ -80,9 +80,9 @@ programming is usually very simple. But not always!
   'ok)
 
 ```
-Its kind of hard to state how simple programming languages are, really, but above is a little dumb trick called the scheme meta-circular evaluator.
+It's kind of hard to state how simple programming languages are, really, but above is a little dumb trick called the scheme meta-circular evaluator.
 It is a full programming language defined in a handful of lines of code. Really,
 once you get this idea, most other dynamically typed programming languages are
 just "sugar" on top of these ideas.
 
-Now to the "data" part of ::data_science:data science::
+Now to the "data" part of ::data_science:data science::.
