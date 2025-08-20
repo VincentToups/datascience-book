@@ -15,11 +15,12 @@ These tools are:
 1. the unix/linux shell
 2. bash (a shell scripting language)
 3. Docker/Podman Containers (little temporary computers)
-4. make (a build system, it controls how your analysis runs)
-5. R (a statistical programming language)
-6. Python (a general purpose programming language)
-7. SQL (a programming language just for querying databases)
-8. Markdown, Latex (ways of authoring results)
+4. git
+5. make (a build system, it controls how your analysis runs)
+6. R (a statistical programming language)
+7. Python (a general purpose programming language)
+8. SQL (a programming language just for querying databases)
+9. Markdown, Latex (ways of authoring results)
 
 Data Science Related Stuff
 --------------------------
