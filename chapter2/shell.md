@@ -71,3 +71,6 @@ use it to run and configure our ::docker:docker containers::, but also because i
 for you to get shell access to machines with data you need and sometimes 
 knowing a little shell magic can make your life better.
 
+
+:student-select:Have you opened a terminal before? If yes, on which operating system?; ../students.json::
+:student-select:What operating system do you use most (Windows/macOS/Linux/ChromeOS)?; ../students.json::

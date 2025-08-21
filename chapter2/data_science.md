@@ -28,3 +28,7 @@ is it: ALL DATA SCIENCE IS SUMMARIZATION.
 We will start with ::dimensionality_reduction:dimensionality reduction::.
 
 
+
+
+:student-select:Which part sounds most interesting right now: exploring data, finding patterns, predicting, or visualizing?; ../students.json::
+:student-select:What kind of data would you enjoy analyzing (sports, health, music, finance, other)?; ../students.json::

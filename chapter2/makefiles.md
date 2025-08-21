@@ -77,3 +77,6 @@ The goal here is to get you as comfortable as possible with the idea that your f
 are _transient_ objects that you can rebuild _at any time_.
 
 Now ::programming_languages:programming languages::.
+
+:student-select:What repeated task in your studies would you most like to automate?; ../students.json::
+:student-select:List a short sequence of steps you do often (e.g., load data → clean → plot).; ../students.json::

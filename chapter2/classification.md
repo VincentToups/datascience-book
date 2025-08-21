@@ -65,3 +65,6 @@ ggmd(ggplot(coef_tbl, aes(x = time, y = beta)) +
 ```
 In ::../chapter3/start:chapter 3:: we will bang all this into the shape of a 
 small project.
+
+:student-select:Name a simple yes/no decision you make often (e.g., bring umbrella?). What info do you use?; ../students.json::
+:student-select:Pick two categories from daily life (e.g., ripe/unripe fruit). What clues separate them?; ../students.json::

@@ -94,3 +94,6 @@ Knowing how to use your version control can be the difference between hours
 or days of debugging and minutes.
 
 Now let's talk about ::makefiles:Makefiles::.
+
+:student-select:Have you ever saved multiple versions of a file (e.g., report_v1, report_v2)? How did you keep track?; ../students.json::
+:student-select:Have you used any version control tool before (yes/no/unsure)?; ../students.json::

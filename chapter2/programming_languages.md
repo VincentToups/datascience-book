@@ -86,3 +86,6 @@ once you get this idea, most other dynamically typed programming languages are
 just "sugar" on top of these ideas.
 
 Now to the "data" part of ::data_science:data science::.
+
+:student-select:What is your current programming experience level (none/beginner/intermediate/advanced)?; ../students.json::
+:student-select:What’s one thing you’d like to automate or build by the end of the course?; ../students.json::

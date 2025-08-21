@@ -102,3 +102,6 @@ ggmd(ggplot(avg_long, aes(x = time, y = avg_voltage, color = cluster)) +
 
 ```
 Now let's cook up a use for ::classification:classification::.
+
+:student-select:Think of everyday items—what’s one way you might group them (e.g., by color, size, purpose)?; ../students.json::
+:student-select:Have you ever noticed natural “groups” in something you care about (music, sports, hobbies)? Describe one.; ../students.json::

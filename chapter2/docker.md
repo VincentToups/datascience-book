@@ -108,3 +108,6 @@ RUN R -e "install.packages(c( \
 The idea here is that as you work on your project you keep your Dockerfile updated with all the software configuration
 you need for the project. That way you can just build the container and get started anywhere. 
 I like to say that if you are using ::git:git:: and Docker, you won't care if your laptop is run over by a truck - clone the repo, build the image, keep going.
+
+:student-select:Have you ever had trouble installing software because of versions or dependencies (yes/no)?; ../students.json::
+:student-select:What computer setup do you use for most schoolwork (personal laptop, lab machines, shared, other)?; ../students.json::

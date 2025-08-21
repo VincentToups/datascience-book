@@ -35,3 +35,6 @@ We are going to try to do all these things by constructing a project as we go.
 But today we are just going to give a brief introduction to all these ideas.
 
 Starting with the :next:shell:the unix/linux shell::.
+
+:student-select:What is your main goal for this course (e.g., learn basics, build a project, improve job skills)?; ../students.json::
+:student-select:What days/times are you generally available for group work?; ../students.json::
