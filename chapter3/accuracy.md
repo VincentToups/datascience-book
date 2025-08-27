@@ -12,7 +12,7 @@ understand where an artefact came from, we need only look at the script that
 produced it. Ideally, we create small, distinct scripts that perform one or
 two tasks only and produce one or two artefacts. 
 
-:student-select:invent a question, ../students.json::.
+:student-select:invent a question; ../students.json::
 
 Another benefit is that artefacts, once produced, are independent of any script 
 or programming language. 

@@ -19,7 +19,7 @@ it's harmless in and of itself and I do it.
 
 Note the following concepts:
 
-:student-select:invent a question, ../students.json::.
+:student-select:invent a question; ../students.json::
 
 1. users: on modern computers access is controlled primarily via users. Ultimately
 a user is just a number associated with a name and some permissions. Users all 
@@ -65,7 +65,7 @@ always assume when writing code that the working directory is the main project
 directory. If we follow this rule we never need to "cd" or otherwise set our
 working directory in our code.
 
-:student-select:invent a question, ../students.json::.
+:student-select:invent a question; ../students.json::
 
 Anyway, let's create a repository.
 

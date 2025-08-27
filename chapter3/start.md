@@ -12,7 +12,7 @@ the data, plotted the average traces, and then we flipped the problem around
 and tried to see what points in time best split one of the clusters by doing
 a logistic regression.
 
-:student-select:invent a question, ../students.json::.
+:student-select:invent a question; ../students.json::
 
 These were split into a variety of files, but not in a formal way. So let's
 create a more formal, if small, project.
@@ -48,4 +48,4 @@ But first let's lay out a few concepts and definitions.
 
 With this vocabulary we can describe our project with ::accuracy:more accuracy::.
 
-:student-select:invent a question, ../students.json::.
+:student-select:invent a question; ../students.json::

@@ -36,4 +36,4 @@
 |  31   | US  |  63   |  ?  |  95   |  _  | 127   | DEL |
 +-------+-----+-------+-----+-------+-----+-------+-----+
 ```
-:student-select:invent a question, ../students.json::.
+:student-select:invent a question; ../students.json::

@@ -11,7 +11,7 @@ We can do that via a Dockerfile.
 
 Here is one now!:
 
-:student-select:invent a question, ../students.json::.
+:student-select:invent a question; ../students.json::
 
 ```Dockerfile file=/fs/book/bios611/my-project/Dockerfile
 # Start from rocker/verse (includes R, tidyverse, knitr, etc.)

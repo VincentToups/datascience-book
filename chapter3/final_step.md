@@ -23,7 +23,7 @@ This is a report. Here is a figure:
 ```
 If we now look at our full Makefile:
 
-:student-select:invent a question, ../students.json::.
+:student-select:invent a question; ../students.json::
 
 ```makefile file=/fs/bios611/my-project/Makefile
 .PHONY: clean

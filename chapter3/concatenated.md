@@ -12,8 +12,6 @@ the data, plotted the average traces, and then we flipped the problem around
 and tried to see what points in time best split one of the clusters by doing
 a logistic regression.
 
-:student-select:invent a question, ../students.json::.
-
 These were split into a variety of files, but not in a formal way. So let's
 create a more formal, if small, project.
 
@@ -48,7 +46,7 @@ But first let's lay out a few concepts and definitions.
 
 With this vocabulary we can describe our project with ::accuracy:more accuracy::.
 
-:student-select:invent a question, ../students.json::.
+:student-select:invent a question; ../students.json::
 
 A Data Science Project Consists Of
 ==================================
@@ -63,8 +61,6 @@ The benefits of organizing our thoughts like this might be obvious: if we want t
 understand where an artefact came from, we need only look at the script that 
 produced it. Ideally, we create small, distinct scripts that perform one or
 two tasks only and produce one or two artefacts. 
-
-:student-select:invent a question, ../students.json::.
 
 Another benefit is that artefacts, once produced, are independent of any script 
 or programming language. 
@@ -111,7 +107,7 @@ it's harmless in and of itself and I do it.
 
 Note the following concepts:
 
-:student-select:invent a question, ../students.json::.
+:student-select:invent a question; ../students.json::
 
 1. users: on modern computers access is controlled primarily via users. Ultimately
 a user is just a number associated with a name and some permissions. Users all 
@@ -157,7 +153,7 @@ always assume when writing code that the working directory is the main project
 directory. If we follow this rule we never need to "cd" or otherwise set our
 working directory in our code.
 
-:student-select:invent a question, ../students.json::.
+:student-select:invent a question; ../students.json::
 
 Anyway, let's create a repository.
 
@@ -218,7 +214,7 @@ git commit -m "Added README. Initial commit."
 Now we can actually push to our git repo. Let's create one. We do that by going to GitHub, creating a new repo, and then
 following the instructions for pushing a new repo.
 
-:student-select:invent a question, ../students.json::.
+:student-select:invent a question; ../students.json::
 
 But first a few notes about ::ssh_keys:ssh, ssh keys, git remotes, etc.::
 
@@ -245,7 +241,7 @@ that I have the private number even though you can't see the private number.
 
 We generate one with ssh-keygen.
 
-:student-select:Suppose we wanted to know what the ssh-keygen command does? How would we figure that out?, ../students.json::.
+:student-select:Suppose we wanted to know what the ssh-keygen command does? How would we figure that out?; ../students.json::
 ```bash 
 cd ~/.ssh/
 ssh-keygen
@@ -257,7 +253,7 @@ We can share the public one with whomever we want! The private one we must never
 share and never put in our git repo. Anyone who has the private key can pretend
 to be us.
 
-:student-select:invent a question, ../students.json::.
+:student-select:invent a question; ../students.json::
 
 We visit GitHub, go to our settings, add our public key, and then we can follow
 the rest of the instructions, which are like this:
@@ -286,7 +282,7 @@ mkdir -p source_data
 For simplicity today we are going to just treat our source data as given and 
 manage it in the repository.
 
-:student-select:invent a question, ../students.json::.
+:student-select:invent a question; ../students.json::
 
 Now we can build our first script. Recall what our example code looked like:
 
@@ -376,7 +372,7 @@ ggsave("figures/voltages.png")
 Once we have modified our function we can actually create an entry for it in our
 makefile. Don't worry about the details here, just get the vibe:
 
-:student-select:invent a question, ../students.json::.
+:student-select:invent a question; ../students.json::
 
 ```makefile 
 # recall 
@@ -489,9 +485,9 @@ write_csv(scores, "projection.csv");
 
 ```
 
-:student-select:invent a question, ../students.json::.
+:student-select:invent a question; ../students.json::
 
-:student-select:Help me find the inputs and outputs and make them fit our project?, ../students.json::.
+:student-select:Help me find the inputs and outputs and make them fit our project?; ../students.json::
 If we have time we'll do one more. Otherwise let's talk about the ::final_step:final step::.
 
 Reporting
@@ -519,7 +515,7 @@ This is a report. Here is a figure:
 ```
 If we now look at our full Makefile:
 
-:student-select:invent a question, ../students.json::.
+:student-select:invent a question; ../students.json::
 
 ```makefile file=/fs/bios611/my-project/Makefile
 .PHONY: clean
@@ -551,7 +547,7 @@ We can do that via a Dockerfile.
 
 Here is one now!:
 
-:student-select:invent a question, ../students.json::.
+:student-select:invent a question; ../students.json::
 
 ```Dockerfile file=/fs/book/bios611/my-project/Dockerfile
 # Start from rocker/verse (includes R, tidyverse, knitr, etc.)

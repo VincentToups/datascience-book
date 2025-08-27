@@ -12,7 +12,7 @@ mkdir -p source_data
 For simplicity today we are going to just treat our source data as given and 
 manage it in the repository.
 
-:student-select:invent a question, ../students.json::.
+:student-select:invent a question; ../students.json::
 
 Now we can build our first script. Recall what our example code looked like:
 
@@ -102,7 +102,7 @@ ggsave("figures/voltages.png")
 Once we have modified our function we can actually create an entry for it in our
 makefile. Don't worry about the details here, just get the vibe:
 
-:student-select:invent a question, ../students.json::.
+:student-select:invent a question; ../students.json::
 
 ```makefile 
 # recall 

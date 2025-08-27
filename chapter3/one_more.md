@@ -75,7 +75,7 @@ write_csv(scores, "projection.csv");
 
 ```
 
-:student-select:invent a question, ../students.json::.
+:student-select:invent a question; ../students.json::
 
-:student-select:Help me find the inputs and outputs and make them fit our project?, ../students.json::.
+:student-select:Help me find the inputs and outputs and make them fit our project?; ../students.json::
 If we have time we'll do one more. Otherwise let's talk about the ::final_step:final step::.

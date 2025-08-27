@@ -24,6 +24,6 @@ git commit -m "Added README. Initial commit."
 Now we can actually push to our git repo. Let's create one. We do that by going to GitHub, creating a new repo, and then
 following the instructions for pushing a new repo.
 
-:student-select:invent a question, ../students.json::.
+:student-select:invent a question; ../students.json::
 
 But first a few notes about ::ssh_keys:ssh, ssh keys, git remotes, etc.::

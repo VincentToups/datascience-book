@@ -21,7 +21,7 @@ that I have the private number even though you can't see the private number.
 
 We generate one with ssh-keygen.
 
-:student-select:Suppose we wanted to know what the ssh-keygen command does? How would we figure that out?, ../students.json::.
+:student-select:Suppose we wanted to know what the ssh-keygen command does? How would we figure that out?; ../students.json::
 ```bash 
 cd ~/.ssh/
 ssh-keygen
@@ -33,7 +33,7 @@ We can share the public one with whomever we want! The private one we must never
 share and never put in our git repo. Anyone who has the private key can pretend
 to be us.
 
-:student-select:invent a question, ../students.json::.
+:student-select:invent a question; ../students.json::
 
 We visit GitHub, go to our settings, add our public key, and then we can follow
 the rest of the instructions, which are like this:

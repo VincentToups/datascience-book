@@ -1,0 +1,4 @@
+
+This is a report. Here is a figure:
+
+![](figures/voltages.png)
