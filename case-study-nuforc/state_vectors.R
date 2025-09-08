@@ -1,0 +1,64 @@
+library(tidyverse)
+library(maps)
+library(cowplot)
+
+# Hard-coded abbreviation -> state name mapping
+state_map <- tribble(
+  ~state, ~name,
+  "al", "Alabama",
+  "ak", "Alaska",
+  "az", "Arizona",
+  "ar", "Arkansas",
+  "ca", "California",
+  "co", "Colorado",
+  "ct", "Connecticut",
+  "de", "Delaware",
+  "fl", "Florida",
+  "ga", "Georgia",
+  "hi", "Hawaii",
+  "id", "Idaho",
+  "il", "Illinois",
+  "in", "Indiana",
+  "ia", "Iowa",
+  "ks", "Kansas",
+  "ky", "Kentucky",
+  "la", "Louisiana",
+  "me", "Maine",
+  "md", "Maryland",
+  "ma", "Massachusetts",
+  "mi", "Michigan",
+  "mn", "Minnesota",
+  "ms", "Mississippi",
+  "mo", "Missouri",
+  "mt", "Montana",
+  "ne", "Nebraska",
+  "nv", "Nevada",
+  "nh", "New Hampshire",
+  "nj", "New Jersey",
+  "nm", "New Mexico",
+  "ny", "New York",
+  "nc", "North Carolina",
+  "nd", "North Dakota",
+  "oh", "Ohio",
+  "ok", "Oklahoma",
+  "or", "Oregon",
+  "pa", "Pennsylvania",
+  "ri", "Rhode Island",
+  "sc", "South Carolina",
+  "sd", "South Dakota",
+  "tn", "Tennessee",
+  "tx", "Texas",
+  "ut", "Utah",
+  "vt", "Vermont",
+  "va", "Virginia",
+  "wa", "Washington",
+  "wv", "West Virginia",
+  "wi", "Wisconsin",
+  "wy", "Wyoming"
+)
+
+# --- Read data ---
+# d is analysis dataset with col 'state' (two-letter abbrev, lowercase)
+d <- read_csv("derived_data/tidied_deduplicated.csv", show_col_types = FALSE) %>%
+  group_by(state,shape) %>% tally(name = "count") %>%
+  filter(!is.na(state) & is.na(shape) & state %in% state_map$state) 
