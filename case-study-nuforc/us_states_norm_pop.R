@@ -1,6 +1,6 @@
 library(tidyverse)
 library(maps)
-library(cowplot)
+
 
 # Hard-coded abbreviation -> state name mapping
 state_map <- tribble(
@@ -65,8 +65,9 @@ d <- read_csv("derived_data/tidied_deduplicated.csv") %>%
 
 # population data (CSV has columns: state (full name), population)
 pop <- read_csv("derived_data/us_state_population_2024.csv", show_col_types = FALSE) %>%
-  inner_join(state_map, by = c(state = "name"), suffix = c(".full", ".map")) %>%
-  transmute(full_name = state.full, state = state.map, population)
+  inner_join(state_map, by = c(state = "name")) %>%
+  rename(full_name=state, state=state.y)
+
 
 data <- d %>%
   inner_join(pop, by = "state") %>%

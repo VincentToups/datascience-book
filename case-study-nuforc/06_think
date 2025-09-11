@@ -1,0 +1,12 @@
+It is often the case that we need to think about how things are normalized.
+
+In this data set we want to know how UFO sightings vary over state, but 
+states have very different populations. So what we were looking at in the previous plot
+is the population of the states (probably). The only way we can tell for sure
+is to normalize the numbers by state population.
+
+Consider this:
+
+``` R file=get_pop_data.R
+
+```

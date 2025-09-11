@@ -1,0 +1,81 @@
+About This Exercise
+===================
+
+We're going to examine the data I've scraped from NUFORC (the National
+UFO Reporting Center).
+
+I do not believe that UFOs are alien craft, for the record. The
+vastness of space is too foribidding when stacked up against my
+understanding of general relativity to make that a plausible
+explanation. 
+
+Therefore, I think these sightings have at least two possible
+explanations. They either represent a modestly coherent cultural or
+even biological phenomenon (my wife's great grandfather experienced a
+luminous entity which he chalked up to an angelic visitation) and/or
+they represent normal metereological or aeuronautical phenomena that
+are, as the name implies, poorly identified.
+
+https://en.wikipedia.org/wiki/When_Prophecy_Fails
+
+Let's see if we can figure this out.
+
+Note: someone might like to do this as a data science project:
+
+https://en.wikipedia.org/wiki/The_Urantia_Book
+
+What we are going to do here is go through a process of creating a
+project as I would do it, with a bit of an emphasis on structure that
+might be somewhat cartoonish, but will hopefully make the ideas in the
+class more clear.
+
+Tidying Our Data
+================
+
+We begin, as always, getting situated with our dataset.
+
+:table:source_data/nuforc_sightings.csv::
+
+:schema:source_data/::
+
+Makefile
+========
+
+Let's begin with some basic analysis.
+
+``` makefile
+
+exploration.md: source_data/nuforc_sightings.csv basic_exploration.R
+	Rscript basic_exploration.R
+
+```
+
+Why write the make target first? It helps focus the mind. As you will
+see we will end up with some significant changes to our Makefile before we are done.
+
+Let's start with some basic utilities. In a real project we'd probably move these to 
+some library-style utilities code.
+``` R file=basic_exploration.R start="lit:library" end="lit:log(\"="
+
+```
+
+What this does is allow us to concisely write out logs. 
+
+:student-select:Where does the logging function get its filename to write to?; ../students.json::
+
+Now that we can log easily, let's get to thinking about examining and cleaning up
+our data. We start with some basic diagnostic information.
+
+``` R file=basic_exploration.R start="lit:d <- read_csv" end="^}"
+
+```
+
+After looking at this stuff by hand for a bit we can make a few more log entries:
+
+``` R file=basic_exploration.R start="lit:log(\"\\n\\nMAD" end="lit:d <- d %>%"
+
+```
+
+Now we get to the real hard stuff: dealing ::02_date_and_time:with date and time::.
+
+[That document](exploration.md)
