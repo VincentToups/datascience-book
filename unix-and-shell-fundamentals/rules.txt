@@ -1,0 +1,13 @@
+1. after read, split by space
+2. if a token looks like $NAME, then look in the env for NAME and replace the
+   $NAME with whatever NAME is associated with.
+3. if an expression like $(...) is found, evaluate ... with these rules 
+and put the output into the command.
+4. see if the first token looks like NAME=VAL and if so we add an env
+   (or export NAME=VAL)
+5. if our expression contains | or > then look at the pieces of the expression
+   (broken on the pipes or before the redirects).
+   For pipes start the first commend, connect stdout the next, etc. 
+   for redirects send the stdout to the file
+5. tries to find a command associated with the first token 
+   by looking in the path.

@@ -1,0 +1,18 @@
+- ::chunks/01_introductory_notes:Introductory Notes::
+- ::chunks/02_common_problems:Common Problems With Data Sets::
+- ::chunks/03_how_to_defend:How to Defend Yourself::
+- ::chunks/04_using_dplyr_basics:Using Dplyr and Readr (Basics)::
+- ::chunks/05_lowercase_non_ascii:Lowercase and Remove Non-ASCII::
+- ::chunks/06_magrittr_aside:An Aside: Magrittr::
+- ::chunks/07_back_to_business:Back to Business::
+- ::chunks/08_ok_values:Deriving ok_values::
+- ::chunks/09_joins:Joins::
+- ::chunks/10_other_summaries:Other Summaries::
+- ::chunks/11_tidy_vs_nontidy:Tidy vs Non-Tidy Data::
+- ::chunks/12_pivots:Pivots::
+- ::chunks/13_review:Review of Dplyr & TidyR::
+- ::chunks/14_ggplot_teaser:ggplot::
+- ::chunks/15_ggplot_concepts:ggplot concepts::
+- ::chunks/16_geometries:GGPlot Geometries::
+- ::chunks/17_non_trivial:Non-trivial Example::
+- ::chunks/18_good_viz:What Makes A Visualization Good?::

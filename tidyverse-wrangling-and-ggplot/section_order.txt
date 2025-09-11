@@ -1,0 +1,13 @@
+01_introductory_notes
+02_common_problems
+03_how_to_defend
+04_using_dplyr_and_readr
+05_back_to_business
+06_joins
+07_summaries_tidy_pivots
+08_review
+09_ggplot
+10_ggplot_concepts
+11_geometries
+12_non_trivial_example
+13_good_viz
