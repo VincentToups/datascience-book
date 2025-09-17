@@ -1,0 +1,8 @@
+- [01 Git In Depth](01_git.md)
+- [02 Diff and Patch](02_diff_patch.md)
+- [03 Basic Stuff](03_repo_actions.md)
+- [04 Commits](04_commits.md)
+- [05 Interactive Staging](05_better_commits.md)
+- [06 Details](06_details.md)
+- [07 Merge and Rebase](07_merge_rebase.md)
+ - [08 Recapitulation](08_recapitulation.md)
