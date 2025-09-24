@@ -4,6 +4,13 @@ Merge and Rebase
 Git is about collaboration, and so we often have to deal with integrating code from other
 people — either via remotes or branches.
 
+```
+main        * * * * * a b c
+origin/main * * * * * q r
+
+main rebase * * * * * q r a' b' c'
+```
+
 Remotes
 -------
 
@@ -118,7 +125,7 @@ state_vectors <- state_vectors %>% group_by(shape) %>%
 
 And then tell git we did it:
 
-```bash
+``` bash
 git add state_vectors.R
 git rebase --continue
 ```
@@ -135,7 +142,7 @@ root@esc:~/bios611/git-in-depth/rebase-example#
 
 We can represent a rebase or merge visually:
 
-```rebase
+``` rebase
 local-main a-b-c-d
 remote-main a-q-r-s-w
 
@@ -144,7 +151,7 @@ remote-main a-q-r-s-w
 local-main a-q-r-s-w-b'-c'-d'
 ```
 
-```merge
+``` merge
 local-main a-b-c-d
 remote-main a-q-r-s-w
 

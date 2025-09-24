@@ -45,7 +45,7 @@ asking about certain types of files (when you say `git status`). We do that with
 .gitignore. This can be anywhere in a project, and it only modifies git's behavior for
 files in or below the directory it's in. You can have multiple.
 
-``` gitignore
+``` .gitignore
 *.png
 *.pdf
 ```

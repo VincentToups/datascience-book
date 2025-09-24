@@ -144,7 +144,7 @@ thing to have in general.
 
 # Ultra Brief Information Theory Introduction
 
-![My illustrious ancestors.](images/bnt-cropped.jpg)
+![My illustrious ancestors.](images/b_and_t.gif)
 
 There is a good joke, originally about Soviet Russians but I'll tell it
 about Boudreaux and Thibadeaux. It's 1902 and Boudreaux gets a job
@@ -166,7 +166,7 @@ world. Pretty soon people want to use them to communicate messages about
 increasingly complex things and in increasing volumes. The question is:
 how much information can such a channel actually transmit?
 
-![Claude Shannon](images/ClaudeShannon_MFO3807.jpg)
+![Claude Shannon](images/shannon.jpg)
 
 \^ that guy figured out a way to calculate such a thing.
 
@@ -238,7 +238,7 @@ There are many methods for clustering data and honestly, within the
 scope of this course I can hardly do better than to point you to the
 documentation from scikit-learn's clustering module.
 
-![](./sphx_glr_plot_cluster_comparison_001.png)
+![](images/sphx_glr_plot_cluster_comparison_001.png)
 
 From a user's point of view this table does a good job of giving you an
 intuition about what clustering algorithms are good for and how they
@@ -371,6 +371,47 @@ Laplacian" which characterizes the graph connecting your data set. The
 eigenvectors of this matrix can be truncated to form a low dimensional
 representation of the data in this "connectivity space" and then regular
 k-means can be used to cluster the points. The results are quite good.
+
+I am going to try harder than usual to motivate this procedure today:
+
+$$
+L = D - A
+$$
+
+Which is made of two matrices:
+
+$$
+D = deg(v_i)_j = \delta_{ij} *\sum_i{C_{ik}}
+$$
+
+Here $C_{ik}$ is just 1 when i and k are connected and 0 otherwise.
+
+A is the adjacency matrix:
+
+$$
+A_{ij} = \begin{cases}1 & \text{if there is an edge between } v_i \text{ and } v_j, \\0 & \text{otherwise}.\end{cases}
+$$
+
+Let's imagine a graph with N nodes. We are given a function on the nodes
+of some kind which assigns a value to each node.
+
+We might want to define a derivative of this function on the graph
+which, intuitively, would be the difference between each node and its
+along each edge. That would have to do with the difference between
+adjecent nodes. Define $B_{\alpha i}$
+
+$$
+B_{\alpha i} =\begin{cases}+1 & \text{if vertex $v$ is the head of edge $e$,} \\-1 & \text{if vertex $v$ is the tail of edge $e$,} \\0  & \text{otherwise.}\end{cases}
+$$
+
+Where we will define the convention that greek indices go over edges and
+latin indices go over nodes.
+
+If f is a function on the nodes then
+
+$$
+B_{\alpha i} f(v^i) = f_(u_i) - f_(u_{\text{via } \alpha})
+$$
 
 Spectral clustering is an expensive operation so let's reduce our data
 down using PCA first.
