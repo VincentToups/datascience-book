@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Interactive CART (Power Grid: Intelligence vs Strength)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 16px; }
+    h1 { font-size: 20px; margin: 0 0 8px; }
+    .row { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+    .panel { border: 1px solid #ddd; border-radius: 8px; padding: 12px; }
+    .panel h2 { font-size: 16px; margin: 0 0 8px; }
+    #controls { display: flex; gap: 12px; margin-bottom: 12px; align-items: center; }
+    button { padding: 6px 10px; border: 1px solid #888; border-radius: 6px; background: #f7f7f7; cursor: pointer; }
+    button:hover { background: #eee; }
+    .legend { display: flex; gap: 10px; align-items: center; font-size: 12px; color: #444; }
+    .legend-item { display: inline-flex; gap: 4px; align-items: center; }
+    .legend-swatch { width: 10px; height: 10px; display: inline-block; border-radius: 50%; }
+    .meta { font-size: 12px; color: #666; margin-left: 8px; }
+    svg { font: 10px sans-serif; }
+  </style>
+</head>
+<body>
+  <h1>Interactive CART (Power Grid: Intelligence vs Strength)</h1>
+  <div id="controls">
+    <button id="resetBtn">Reset</button>
+    <button id="addSplitBtn">Add Best Split</button>
+    <span class="meta" id="statusTxt">Loading…</span>
+  </div>
+  <div class="row">
+    <div class="panel">
+      <h2 id="trainTitle">Training Data and Splits</h2>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-swatch" style="background:#1f77b4"></span> Male</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:#ff7f0e"></span> Female</span>
+      </div>
+      <svg id="scatter" width="520" height="420"></svg>
+      <h2 id="testTitle" style="margin-top:16px;">Testing Data and Splits</h2>
+      <svg id="scatterTest" width="520" height="420"></svg>
+    </div>
+    <div class="panel">
+      <h2>ROC Curve (Test Set Scores)</h2>
+      <svg id="roc" width="520" height="420"></svg>
+      <div class="meta" id="aucTxt"></div>
+    </div>
+  </div>
+
+  <!-- D3 from CDN (used by the browser at runtime) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script>
+  // Seeded RNG for reproducibility (Mulberry32)
+  function mulberry32(seed) {
+    let t = seed >>> 0;
+    return function() {
+      t += 0x6D2B79F5;
+      let r = Math.imul(t ^ t >>> 15, 1 | t);
+      r ^= r + Math.imul(r ^ r >>> 7, 61 | r);
+      return ((r ^ r >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function seededShuffle(array, rng) {
+    const a = array.slice();
+    for (let i = a.length - 1; i > 0; --i) {
+      const j = Math.floor(rng() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  // CART helpers (binary splits, axis-aligned)
+  function giniFromP(p) { return 2 * p * (1 - p); }
+
+  // Find best split for a subset of rows on feature f (string), returns {feature, threshold, gain} or null
+  function findSplit(rows, f, positiveLabel = 'Male') {
+    if (!rows.length) return null;
+    const sorted = rows.slice().sort((a, b) => d3.ascending(a[f], b[f]));
+    const y = sorted.map(d => d.gender === positiveLabel ? 1 : 0);
+    const x = sorted.map(d => +d[f]);
+    // Candidate points where class label changes AND x strictly increases
+    const idx = [];
+    for (let i = 0; i < y.length - 1; i++) {
+      if (y[i] !== y[i+1] && x[i] < x[i+1]) idx.push(i);
+    }
+    if (!idx.length) return null;
+    const n = y.length;
+    const pParent = d3.mean(y);
+    const gParent = giniFromP(pParent);
+
+    let bestGain = -Infinity;
+    let bestSplit = null;
+    for (const i of idx) {
+      const sMid = (x[i] + x[i+1]) / 2;
+      // Snap to integer boundary (like R plots): x <= t vs x > t
+      const t = Math.floor(sMid);
+      // Partition using integer threshold
+      let leftPos = 0, rightPos = 0, leftN = 0, rightN = 0;
+      for (let k = 0; k < n; k++) {
+        if (x[k] <= t) { leftN++; leftPos += y[k]; }
+        else { rightN++; rightPos += y[k]; }
+      }
+      if (leftN === 0 || rightN === 0) continue; // skip degenerate splits
+      const pL = leftN ? (leftPos / leftN) : 0;
+      const pR = rightN ? (rightPos / rightN) : 0;
+      const gL = giniFromP(pL);
+      const gR = giniFromP(pR);
+      const gWeighted = (leftN * gL + rightN * gR) / n;
+      const gain = gParent - gWeighted;
+      if (!Number.isNaN(gain) && gain > bestGain) {
+        bestGain = gain; bestSplit = t;
+      }
+    }
+    if (bestSplit == null) return null;
+    return { feature: f, threshold: bestSplit, gain: bestGain };
+  }
+
+  // Tree representation: node = { feature?, threshold?, left?, right?, rowsIdx: [indices into train], bbox: {xmin,xmax,ymin,ymax} }
+  function buildInitialTree(train) {
+    // Bounding box from data extents
+    const xs = train.map(d => d.intelligence);
+    const ys = train.map(d => d.strength);
+    return {
+      rowsIdx: d3.range(train.length),
+      bbox: { xmin: d3.min(xs), xmax: d3.max(xs), ymin: d3.min(ys), ymax: d3.max(ys) }
+    };
+  }
+
+  function isLeaf(node) { return !node.left && !node.right; }
+
+  function applySplit(node, split, train) {
+    const { feature, threshold } = split;
+    const leftIdx = [], rightIdx = [];
+    for (const i of node.rowsIdx) {
+      if (train[i][feature] <= threshold) leftIdx.push(i); else rightIdx.push(i);
+    }
+    const leftBox = { ...node.bbox };
+    const rightBox = { ...node.bbox };
+    if (feature === 'intelligence') { leftBox.xmax = threshold; rightBox.xmin = threshold; }
+    else if (feature === 'strength') { leftBox.ymax = threshold; rightBox.ymin = threshold; }
+    node.feature = feature;
+    node.threshold = threshold;
+    node.left = { rowsIdx: leftIdx, bbox: leftBox };
+    node.right = { rowsIdx: rightIdx, bbox: rightBox };
+  }
+
+  // Find best split for each current leaf (one level growth). Returns array of {leaf, split}.
+  function findBestSplitsAllLeaves(root, train) {
+    const leaves = [];
+    function collect(n) { if (!n) return; if (isLeaf(n)) leaves.push(n); else { collect(n.left); collect(n.right); } }
+    collect(root);
+    const actions = [];
+    for (const leaf of leaves) {
+      const rows = leaf.rowsIdx.map(i => train[i]);
+      if (rows.length < 2) continue;
+      // require at least two classes present in leaf
+      const pos = rows.reduce((s,d)=> s + (d.gender==='Male'?1:0), 0);
+      if (pos === 0 || pos === rows.length) continue;
+      const candX = findSplit(rows, 'intelligence');
+      const candY = findSplit(rows, 'strength');
+      const c = [candX, candY].filter(Boolean).sort((a,b)=> d3.descending(a.gain,b.gain))[0];
+      if (c) actions.push({ leaf, split: c });
+    }
+    return actions;
+  }
+
+  // Assign leaf probabilities (P(Male))
+  function computeLeafProbs(root, train) {
+    const probs = new Map();
+    let nextId = 0;
+    function traverse(n) {
+      if (!n) return;
+      if (isLeaf(n)) {
+        const rows = n.rowsIdx.map(i => train[i]);
+        const p = rows.length ? d3.mean(rows, d => d.gender === 'Male' ? 1 : 0) : 0;
+        n.leafId = nextId++;
+        probs.set(n.leafId, p);
+      } else { traverse(n.left); traverse(n.right); }
+    }
+    traverse(root);
+    return probs; // Map leafId -> prob
+  }
+
+  // Predict probability for a row
+  function predictOne(root, row) {
+    let n = root;
+    while (!isLeaf(n)) {
+      if (n.feature === 'intelligence') n = (row.intelligence <= n.threshold) ? n.left : n.right;
+      else n = (row.strength <= n.threshold) ? n.left : n.right;
+    }
+    return n && n.leafProb != null ? n.leafProb : 0.5;
+  }
+
+  // Return the leaf node for a given row
+  function getLeafNode(root, row) {
+    let n = root;
+    while (!isLeaf(n)) {
+      if (n.feature === 'intelligence') n = (row.intelligence <= n.threshold) ? n.left : n.right;
+      else n = (row.strength <= n.threshold) ? n.left : n.right;
+    }
+    return n;
+  }
+
+  function attachLeafProbs(root, probs) {
+    function walk(n) { if (!n) return; if (isLeaf(n)) n.leafProb = probs.get(n.leafId) ?? 0.5; else { walk(n.left); walk(n.right); } }
+    walk(root);
+  }
+
+  // ROC computation given scored test set {y, score}
+  function computeROC(scored) {
+    const uniq = Array.from(new Set(scored.map(d => d.score))).sort((a, b) => d3.descending(a, b));
+    const thresholds = [Infinity, ...uniq, -Infinity];
+    const out = [];
+    for (const t of thresholds) {
+      let tp = 0, fp = 0, tn = 0, fn = 0;
+      for (const d of scored) {
+        const pred = d.score >= t ? 1 : 0;
+        if (pred === 1 && d.y === 1) tp++; else if (pred === 1 && d.y === 0) fp++;
+        else if (pred === 0 && d.y === 0) tn++; else fn++;
+      }
+      const fpr = fp / (fp + tn || 1);
+      const tpr = tp / (tp + fn || 1);
+      out.push({ fpr, tpr, threshold: t });
+    }
+    return out;
+  }
+
+  function aucROC(roc) {
+    // Sort by fpr ascending, trapezoidal rule
+    const pts = roc.slice().sort((a,b) => d3.ascending(a.fpr, b.fpr));
+    let auc = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const x0 = pts[i-1].fpr, y0 = pts[i-1].tpr;
+      const x1 = pts[i].fpr,   y1 = pts[i].tpr;
+      auc += (x1 - x0) * (y0 + y1) / 2;
+    }
+    return auc;
+  }
+
+  // Visualization
+  const scatterSvg = d3.select('#scatter');
+  const scatterTestSvg = d3.select('#scatterTest');
+  const rocSvg = d3.select('#roc');
+  const statusTxt = d3.select('#statusTxt');
+  const aucTxt = d3.select('#aucTxt');
+  const color = d3.scaleOrdinal().domain(['Male','Female']).range(['#1f77b4','#ff7f0e']);
+
+  const margin = { top: 20, right: 20, bottom: 40, left: 45 };
+  const W = +scatterSvg.attr('width'), H = +scatterSvg.attr('height');
+  const w = W - margin.left - margin.right, h = H - margin.top - margin.bottom;
+  const gScatter = scatterSvg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+  gScatter.append('g').attr('class','x-axis').attr('transform', `translate(0,${h})`);
+  gScatter.append('g').attr('class','y-axis');
+  gScatter.append('g').attr('class','splits');
+  gScatter.append('g').attr('class','points');
+  gScatter.append('g').attr('class','leaf-labels');
+  gScatter.append('text').attr('class','x-label').attr('x', w/2).attr('y', h+32).attr('text-anchor','middle').text('Intelligence');
+  gScatter.append('text').attr('class','y-label').attr('x', -h/2).attr('y', -35).attr('transform','rotate(-90)').attr('text-anchor','middle').text('Strength');
+
+  const gScatterTest = scatterTestSvg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+  gScatterTest.append('g').attr('class','x-axis').attr('transform', `translate(0,${h})`);
+  gScatterTest.append('g').attr('class','y-axis');
+  gScatterTest.append('g').attr('class','splits');
+  gScatterTest.append('g').attr('class','points');
+  gScatterTest.append('g').attr('class','leaf-labels');
+  gScatterTest.append('text').attr('class','x-label').attr('x', w/2).attr('y', h+32).attr('text-anchor','middle').text('Intelligence');
+  gScatterTest.append('text').attr('class','y-label').attr('x', -h/2).attr('y', -35).attr('transform','rotate(-90)').attr('text-anchor','middle').text('Strength');
+
+  const gROC = rocSvg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+  gROC.append('g').attr('class','x-axis').attr('transform', `translate(0,${h})`);
+  gROC.append('g').attr('class','y-axis');
+  gROC.append('g').attr('class','curve');
+
+  // Global state
+  let RNG = mulberry32(42);
+  let train = [], test = [];
+  let root = null;
+  let xScale, yScale;
+
+  function drawScatter() {
+    // scales: match R visualization where we plot value - runif(1)
+    const xdom = [0, d3.max(train, d => d.intelligence)];
+    const ydom = [0, d3.max(train, d => d.strength)];
+    xScale = d3.scaleLinear().domain(xdom).range([0, w]);
+    yScale = d3.scaleLinear().domain(ydom).range([h, 0]);
+    gScatter.select('.x-axis').call(d3.axisBottom(xScale).ticks(8).tickFormat(d3.format('d')));
+    gScatter.select('.y-axis').call(d3.axisLeft(yScale).ticks(8).tickFormat(d3.format('d')));
+
+    const pts = gScatter.select('.points').selectAll('circle').data(train, d => d.id);
+    pts.join(
+      enter => enter.append('circle')
+        .attr('r', 3)
+        .attr('cx', d => xScale(d.intelligence - d.jx))
+        .attr('cy', d => yScale(d.strength - d.jy))
+        .attr('fill', d => color(d.gender))
+        .attr('opacity', 0.6)
+        .attr('stroke', d => {
+          const leaf = getLeafNode(root, d);
+          const majMale = (leaf.leafProb ?? 0.5) >= 0.5;
+          const majLabel = majMale ? 'Male' : 'Female';
+          return d.gender === majLabel ? 'black' : 'none';
+        })
+        .attr('stroke-width', d => {
+          const leaf = getLeafNode(root, d);
+          const majMale = (leaf.leafProb ?? 0.5) >= 0.5;
+          const majLabel = majMale ? 'Male' : 'Female';
+          return d.gender === majLabel ? 1.2 : 0;
+        }),
+      update => update
+        .attr('cx', d => xScale(d.intelligence - d.jx))
+        .attr('cy', d => yScale(d.strength - d.jy))
+        .attr('stroke', d => {
+          const leaf = getLeafNode(root, d);
+          const majMale = (leaf.leafProb ?? 0.5) >= 0.5;
+          const majLabel = majMale ? 'Male' : 'Female';
+          return d.gender === majLabel ? 'black' : 'none';
+        })
+        .attr('stroke-width', d => {
+          const leaf = getLeafNode(root, d);
+          const majMale = (leaf.leafProb ?? 0.5) >= 0.5;
+          const majLabel = majMale ? 'Male' : 'Female';
+          return d.gender === majLabel ? 1.2 : 0;
+        })
+    );
+
+    // Draw split segments for current tree
+    const segments = [];
+    function collectSegments(n) {
+      if (!n || isLeaf(n) || n.threshold == null) return;
+      if (n.feature === 'intelligence') {
+        segments.push({ x1: xScale(n.threshold), y1: yScale(n.bbox.ymin), x2: xScale(n.threshold), y2: yScale(n.bbox.ymax) });
+      } else if (n.feature === 'strength') {
+        segments.push({ x1: xScale(n.bbox.xmin), y1: yScale(n.threshold), x2: xScale(n.bbox.xmax), y2: yScale(n.threshold) });
+      }
+      collectSegments(n.left); collectSegments(n.right);
+    }
+    collectSegments(root);
+    const s = gScatter.select('.splits').selectAll('line').data(segments);
+    s.join(
+      enter => enter.append('line')
+        .attr('x1', d => d.x1).attr('y1', d => d.y1)
+        .attr('x2', d => d.x2).attr('y2', d => d.y2)
+        .attr('stroke', '#444').attr('stroke-width', 1.5).attr('stroke-dasharray', '4,3'),
+      update => update
+        .attr('x1', d => d.x1).attr('y1', d => d.y1)
+        .attr('x2', d => d.x2).attr('y2', d => d.y2)
+    );
+
+    // Draw leaf majority labels (M/F) at top-left of each leaf region
+    const leaves = [];
+    (function collectLeaves(n){ if (!n) return; if (isLeaf(n)) leaves.push(n); else { collectLeaves(n.left); collectLeaves(n.right); } })(root);
+    const labels = leaves.map(n => {
+      const majorityM = (n.leafProb ?? 0.5) >= 0.5;
+      return {
+        id: n.leafId,
+        text: majorityM ? 'M' : 'F',
+        color: '#ff0000',
+        x: xScale(n.bbox.xmin) + 2,
+        y: yScale(n.bbox.ymax) + 12
+      };
+    });
+    const labSel = gScatter.select('.leaf-labels').selectAll('text').data(labels, d => d.id);
+    labSel.join(
+      enter => enter.append('text')
+        .attr('x', d => d.x).attr('y', d => d.y)
+        .attr('fill', d => d.color)
+        .attr('stroke', 'black')
+        .attr('stroke-width', 1.5)
+        .attr('paint-order', 'stroke fill')
+        .attr('font-weight', '700')
+        .attr('font-size', '18px')
+        .text(d => d.text),
+      update => update
+        .attr('x', d => d.x).attr('y', d => d.y)
+        .attr('fill', d => d.color)
+        .attr('stroke', 'black')
+        .attr('stroke-width', 1.5)
+        .attr('paint-order', 'stroke fill')
+        .attr('font-size', '18px')
+        .text(d => d.text),
+      exit => exit.remove()
+    );
+
+    // Mirror to test plot: axes, splits, labels, and points with correctness stroke
+    gScatterTest.select('.x-axis').call(d3.axisBottom(xScale).ticks(8).tickFormat(d3.format('d')));
+    gScatterTest.select('.y-axis').call(d3.axisLeft(yScale).ticks(8).tickFormat(d3.format('d')));
+
+    const segments2 = [];
+    (function collectSegments2(n){ if (!n || isLeaf(n) || n.threshold == null) return; if (n.feature==='intelligence') segments2.push({x1:xScale(n.threshold),y1:yScale(n.bbox.ymin),x2:xScale(n.threshold),y2:yScale(n.bbox.ymax)}); else segments2.push({x1:xScale(n.bbox.xmin),y1:yScale(n.threshold),x2:xScale(n.bbox.xmax),y2:yScale(n.threshold)}); collectSegments2(n.left); collectSegments2(n.right); })(root);
+    const s2 = gScatterTest.select('.splits').selectAll('line').data(segments2);
+    s2.join(
+      enter => enter.append('line')
+        .attr('x1', d => d.x1).attr('y1', d => d.y1)
+        .attr('x2', d => d.x2).attr('y2', d => d.y2)
+        .attr('stroke', '#444').attr('stroke-width', 1.5).attr('stroke-dasharray', '4,3'),
+      update => update
+        .attr('x1', d => d.x1).attr('y1', d => d.y1)
+        .attr('x2', d => d.x2).attr('y2', d => d.y2)
+    );
+    const leaves2 = [];
+    (function collectLeaves2(n){ if (!n) return; if (isLeaf(n)) leaves2.push(n); else { collectLeaves2(n.left); collectLeaves2(n.right); } })(root);
+    const labels2 = leaves2.map(n => ({ id: n.leafId, text: (n.leafProb ?? 0.5) >= 0.5 ? 'M' : 'F', color: '#ff0000', x: xScale(n.bbox.xmin)+2, y: yScale(n.bbox.ymax)+12 }));
+    const lab2 = gScatterTest.select('.leaf-labels').selectAll('text').data(labels2, d => d.id);
+    lab2.join(
+      enter => enter.append('text')
+        .attr('x', d => d.x).attr('y', d => d.y)
+        .attr('fill', d => d.color)
+        .attr('stroke', 'black').attr('stroke-width', 1.5)
+        .attr('paint-order', 'stroke fill')
+        .attr('font-weight', '700').attr('font-size', '18px')
+        .text(d => d.text),
+      update => update
+        .attr('x', d => d.x).attr('y', d => d.y)
+        .attr('fill', d => d.color)
+        .attr('stroke', 'black').attr('stroke-width', 1.5)
+        .attr('paint-order', 'stroke fill')
+        .attr('font-size', '18px')
+        .text(d => d.text),
+      exit => exit.remove()
+    );
+
+    const pts2 = gScatterTest.select('.points').selectAll('circle').data(test, d => d.id);
+    pts2.join(
+      enter => enter.append('circle')
+        .attr('r', 3)
+        .attr('cx', d => xScale(d.intelligence - d.jx))
+        .attr('cy', d => yScale(d.strength - d.jy))
+        .attr('fill', d => color(d.gender))
+        .attr('opacity', 0.6)
+        .attr('stroke', d => {
+          const leaf = getLeafNode(root, d);
+          const majMale = (leaf.leafProb ?? 0.5) >= 0.5;
+          const majLabel = majMale ? 'Male' : 'Female';
+          return d.gender === majLabel ? 'black' : 'none';
+        })
+        .attr('stroke-width', d => {
+          const leaf = getLeafNode(root, d);
+          const majMale = (leaf.leafProb ?? 0.5) >= 0.5;
+          const majLabel = majMale ? 'Male' : 'Female';
+          return d.gender === majLabel ? 1.2 : 0;
+        }),
+      update => update
+        .attr('cx', d => xScale(d.intelligence - d.jx))
+        .attr('cy', d => yScale(d.strength - d.jy))
+        .attr('stroke', d => {
+          const leaf = getLeafNode(root, d);
+          const majMale = (leaf.leafProb ?? 0.5) >= 0.5;
+          const majLabel = majMale ? 'Male' : 'Female';
+          return d.gender === majLabel ? 'black' : 'none';
+        })
+        .attr('stroke-width', d => {
+          const leaf = getLeafNode(root, d);
+          const majMale = (leaf.leafProb ?? 0.5) >= 0.5;
+          const majLabel = majMale ? 'Male' : 'Female';
+          return d.gender === majLabel ? 1.2 : 0;
+        })
+    );
+  }
+
+  function drawROC() {
+    // Score test set
+    const scored = test.map(d => ({ y: d.gender === 'Male' ? 1 : 0, score: predictOne(root, d) }));
+    const roc = computeROC(scored);
+    const auc = aucROC(roc);
+    aucTxt.text(`AUC ≈ ${auc.toFixed(3)} (1=perfect, 0.5=random)`);
+
+    const x = d3.scaleLinear().domain([0,1]).range([0,w]);
+    const y = d3.scaleLinear().domain([0,1]).range([h,0]);
+    gROC.select('.x-axis').call(d3.axisBottom(x));
+    gROC.select('.y-axis').call(d3.axisLeft(y));
+
+    // Baseline
+    const baseline = gROC.selectAll('line.baseline').data([0]);
+    baseline.join(
+      enter => enter.append('line').attr('class','baseline')
+        .attr('x1', x(0)).attr('y1', y(0))
+        .attr('x2', x(1)).attr('y2', y(1))
+        .attr('stroke', 'red').attr('stroke-width', 1)
+    );
+
+    const line = d3.line().x(d => x(d.fpr)).y(d => y(d.tpr));
+    const path = gROC.select('.curve').selectAll('path').data([roc]);
+    path.join(
+      enter => enter.append('path').attr('fill','none').attr('stroke','#1f77b4').attr('stroke-width',2).attr('d', line),
+      update => update.attr('d', line)
+    );
+  }
+
+  function recomputeAndRedraw() {
+    // Compute leaf probs and attach to tree
+    const probs = computeLeafProbs(root, train);
+    attachLeafProbs(root, probs);
+    drawScatter();
+    drawROC();
+    // Update titles with current accuracy
+    const accTrain = d3.mean(train, d => {
+      const leaf = getLeafNode(root, d);
+      const majMale = (leaf.leafProb ?? 0.5) >= 0.5;
+      const majLabel = majMale ? 'Male' : 'Female';
+      return d.gender === majLabel ? 1 : 0;
+    });
+    const accTest = d3.mean(test, d => {
+      const p = predictOne(root, d);
+      const pred = p >= 0.5 ? 'Male' : 'Female';
+      return d.gender === pred ? 1 : 0;
+    });
+    const trainTitle = document.getElementById('trainTitle');
+    const testTitle = document.getElementById('testTitle');
+    if (trainTitle) trainTitle.textContent = `Training Data and Splits — accuracy: ${(accTrain*100).toFixed(1)}%`;
+    if (testTitle) testTitle.textContent   = `Testing Data and Splits — accuracy: ${(accTest*100).toFixed(1)}%`;
+  }
+
+  function resetTree() {
+    root = buildInitialTree(train);
+    recomputeAndRedraw();
+  }
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    resetTree();
+  });
+  document.getElementById('addSplitBtn').addEventListener('click', () => {
+    const actions = findBestSplitsAllLeaves(root, train);
+    if (!actions.length) { statusTxt.text('No further useful splits found for any leaf.'); return; }
+    for (const {leaf, split} of actions) applySplit(leaf, split, train);
+    statusTxt.text(`Added ${actions.length} split${actions.length>1?'s':''} (grew one level).`);
+    recomputeAndRedraw();
+  });
+
+  // Data loading and preparation (replicates R steps focusing on intelligence/strength)
+  async function loadData() {
+    statusTxt.text('Loading data…');
+    const [power, genders] = await Promise.all([
+      d3.csv('source_data/power_grid_characters.csv'),
+      d3.csv('source_data/power_grid_character_genders.csv')
+    ]);
+
+    // Build gender map for Male/Female only
+    const genderMap = new Map();
+    for (const g of genders) {
+      const key = `${g['character_name']}||${g['url']}`;
+      if (g.gender === 'Male' || g.gender === 'Female') genderMap.set(key, g.gender);
+    }
+
+    // Aggregate intelligence and strength per character (max over duplicates)
+    const agg = new Map();
+    for (const row of power) {
+      const cat = row['power_category'];
+      if (cat !== 'intelligence' && cat !== 'strength') continue;
+      const key = `${row['character_name']}||${row['url']}`;
+      const gender = genderMap.get(key);
+      if (!gender) continue; // restrict to Male/Female with known gender
+      const lvl = +row['numeric_level'];
+      if (!agg.has(key)) agg.set(key, { id: key, character_name: row['character_name'], url: row['url'], gender, intelligence: undefined, strength: undefined });
+      const ob = agg.get(key);
+      if (cat === 'intelligence') ob.intelligence = Math.max(ob.intelligence ?? -Infinity, lvl);
+      if (cat === 'strength')     ob.strength     = Math.max(ob.strength     ?? -Infinity, lvl);
+    }
+
+    // Convert to array and filter complete cases
+    let data = Array.from(agg.values()).filter(d => Number.isFinite(d.intelligence) && Number.isFinite(d.strength));
+
+    // Fill defaults to 2 if missing (as in R), though we filtered to complete cases
+    for (const d of data) {
+      if (!Number.isFinite(d.intelligence)) d.intelligence = 2;
+      if (!Number.isFinite(d.strength)) d.strength = 2;
+    }
+
+    // Balance genders by sampling equal counts (up to 700 each if available)
+    const males = data.filter(d => d.gender === 'Male');
+    const females = data.filter(d => d.gender === 'Female');
+    const target = Math.min(700, males.length, females.length);
+    const malesS = seededShuffle(males, RNG).slice(0, target);
+    const femalesS = seededShuffle(females, RNG).slice(0, target);
+    const balanced = malesS.concat(femalesS);
+
+    // Stratified train/test split 80/20 per gender
+    const byGender = d3.group(balanced, d => d.gender);
+    const trainArr = [], testArr = [];
+    for (const [g, arr] of byGender) {
+      const shuf = seededShuffle(arr, RNG);
+      const nTrain = Math.floor(shuf.length * 0.8);
+      trainArr.push(...shuf.slice(0, nTrain));
+      testArr.push(...shuf.slice(nTrain));
+    }
+    // assign ids for stable binding and per-point uniform jitters in [0,1)
+    train = trainArr.map((d,i) => ({...d, id: `tr-${i}`, jx: RNG(), jy: RNG()}));
+    test  = testArr.map((d,i) => ({...d, id: `te-${i}`, jx: RNG(), jy: RNG()}));
+
+    // Init tree and draw
+    root = buildInitialTree(train);
+    recomputeAndRedraw();
+    statusTxt.text(`Loaded. Train n=${train.length}, Test n=${test.length}. Click "Add Best Split" to grow.`);
+  }
+
+  loadData().catch(err => {
+    console.error(err);
+    statusTxt.text('Failed to load data. Check console.');
+  });
+
+  </script>
+</body>
+</html>

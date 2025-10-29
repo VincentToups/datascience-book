@@ -1,0 +1,466 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Ridge vs Lasso — Interactive Coefficient Shrinkage Demo (D3.js)</title>
+<style>
+  :root { --w: 980px; --h: 420px; --pad: 44px; font: 14px/1.35 system-ui, sans-serif; }
+  body { margin: 2rem; color: #222; }
+  h1 { margin: 0 0 .5rem 0; font-size: 1.35rem; }
+  .row { display: flex; gap: 2rem; align-items: center; flex-wrap: wrap; }
+  .panel { padding: .75rem 1rem; border: 1px solid #ddd; border-radius: 8px; }
+  .small { font-size: 12px; color: #555; }
+  #chart { width: var(--w); height: var(--h); }
+  .axis path, .axis line { shape-rendering: crispEdges; }
+  .coef-label { font-size: 12px; text-anchor: middle; }
+  .zero-line { stroke: #777; stroke-dasharray: 4 4; }
+  input[type="range"] { width: 340px; }
+  code.k { padding: 0 .25rem; background: #f6f6f6; border: 1px solid #eee; border-radius: 4px; }
+  .legend { display: flex; gap: .75rem; flex-wrap: wrap; }
+  .badge { display: inline-flex; align-items: center; gap: .4rem; }
+  .swatch { width: .9rem; height: .9rem; border-radius: 2px; outline: 1px solid #0001; }
+  table { border-collapse: collapse; margin-top: .5rem; }
+  th, td { padding: .2rem .4rem; border: 1px solid #ddd; text-align: right; }
+  th { background: #fafafa; }
+  .wide { min-width: 5.5rem; }
+</style>
+
+<h1>Ridge &amp; Lasso Regression — Interactive Shrinkage Demo</h1>
+
+<div class="row">
+  <div class="panel">
+    <div><strong>Penalty:</strong>
+      <label><input type="radio" name="pen" value="ridge" checked> Ridge (L2)</label>
+      &nbsp;&nbsp;
+      <label><input type="radio" name="pen" value="lasso"> Lasso (L1)</label>
+    </div>
+    <div style="margin-top:.5rem;">
+      <label for="lambda"><strong>λ</strong> (regularization strength): </label>
+      <input id="lambda" type="range" min="0" max="20" step="0.1" value="0">
+      <span id="lamval" class="small">0.0</span>
+    </div>
+    <div style="margin-top:.5rem;">
+      <button id="regen">Regenerate data</button>
+      <label class="small"><input id="seeded" type="checkbox" checked> deterministic seed</label>
+    </div>
+    <div class="small" style="margin-top:.35rem;">
+      Data: n = 120 samples, p = 6 features (correlated). X and y are standardized; intercept omitted and thus effectively unpenalized (centered design).
+    </div>
+  </div>
+
+  <div class="panel">
+    <div><strong>Fit diagnostics</strong></div>
+    <div class="small">
+      <div>Penalty: <span id="penKind">Ridge</span>, λ=<span id="lamval2">0.0</span></div>
+      <div>MSE: <span id="mse">–</span></div>
+      <div>‖β‖₁: <span id="l1">–</span> &nbsp; • &nbsp; ‖β‖₂: <span id="l2">–</span></div>
+    </div>
+    <div class="legend" id="legend" style="margin-top:.35rem;"></div>
+    <div class="small" style="margin-top:.35rem;">True β (for data generation): 
+      <code class="k" id="trueb"></code>
+    </div>
+  </div>
+</div>
+
+<div class="row" style="align-items:flex-start; gap:2rem; margin-top:.5rem;">
+  <svg id="chart" viewBox="0 0 980 420" role="img" aria-label="Bar chart of regression coefficients" style="width:560px; height:240px;"></svg>
+  <div class="panel" style="max-width: 460px;">
+    <strong>Smallest Two Coefficients (2D)</strong>
+    <div class="small">Shows the two smallest |β| as a point (β<i>i</i>, β<i>j</i>). Shape indicates penalty: circle = Ridge (L2 ball), diamond = Lasso (L1 ball).</div>
+    <div class="row" style="align-items:flex-start; gap:1rem;">
+      <svg id="coef2d" viewBox="0 0 420 420" role="img" aria-label="2D plot of two smallest coefficients" style="width:420px;height:420px;"></svg>
+      <div class="small" id="coef2dInfo"></div>
+    </div>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:1rem; max-width: var(--w);">
+  <strong>Current coefficients</strong>
+  <div class="small">Updates live as λ changes.</div>
+  <div id="coefTable"></div>
+</div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+/*** Data generation (correlated X, known β, standardized X & y) ***/
+function mul(A, B) {
+  // matrix multiply (A m×k) * (B k×n) => m×n
+  const m = A.length, k = A[0].length, n = B[0].length;
+  const C = Array.from({length:m}, () => Array(n).fill(0));
+  for (let i=0;i<m;i++){
+    for (let t=0;t<k;t++){
+      const a = A[i][t];
+      for (let j=0;j<n;j++) C[i][j] += a * B[t][j];
+    }
+  }
+  return C;
+}
+function transpose(A){ return A[0].map((_,j)=>A.map(r=>r[j])); }
+function addNoise(vec, sigma, rng) {
+  return vec.map(v => v + sigma * rng.normal());
+}
+function seedPRNG(s) {
+  // Mulberry32-style + normal Box-Muller
+  let a = s>>>0;
+  // Ensure division applies after unsigned shift; otherwise it shifts by (0/4294967296)
+  const rand = () => ((a = (a + 0x6D2B79F5) | 0, Math.imul(a ^ a>>>15, 1 | a) + (Math.imul(a ^ a>>>7, 61 | a) ^ a) ^ a) >>> 0) / 4294967296;
+  const normal = () => {
+    let u=0,v=0; while(u===0)u=rand(); while(v===0)v=rand();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+  };
+  return {rand, normal};
+}
+function generateData(n=120, p=6, seed=1234) {
+  const rng = seedPRNG(seed);
+  // Create correlated Gaussian features via X_raw * L, where L has off-diagonals
+  const Xraw = Array.from({length:n}, _ => Array.from({length:p}, _ => rng.normal()));
+  const L = Array.from({length:p}, (_,i) =>
+            Array.from({length:p}, (_,j) => (i===j ? 1 : 0.6*Math.exp(-Math.abs(i-j)/2))));
+  const Xc = mul(Xraw, L); // correlated
+  // True beta (sparse-ish)
+  const betaTrue = [1.6, -1.2, 0.8, 0.0, 0.0, 0.5];
+  // Standardize columns of X
+  const X = standardizeCols(Xc);
+  // Generate y = X β + ε, then standardize y
+  let y = X.map(row => row.reduce((acc, xj, j) => acc + xj * betaTrue[j], 0));
+  y = addNoise(y, 0.8, rng);
+  y = standardizeVec(y);
+  return {X, y, betaTrue};
+}
+function mean(a){ return a.reduce((s,x)=>s+x,0)/a.length; }
+function std(a){ const m=mean(a); return Math.sqrt(a.reduce((s,x)=>s+(x-m)*(x-m),0)/(a.length-1)); }
+function standardizeVec(v){
+  const m = mean(v), s = std(v) || 1;
+  return v.map(x => (x - m)/s);
+}
+function standardizeCols(M){
+  const n = M.length, p = M[0].length;
+  const cols = transpose(M);
+  const m = cols.map(c=>mean(c));
+  const s = cols.map(c=>std(c)||1);
+  const out = Array.from({length:n}, ()=>Array(p).fill(0));
+  for (let i=0;i<n;i++){
+    for (let j=0;j<p;j++) out[i][j] = (M[i][j] - m[j]) / s[j];
+  }
+  return out;
+}
+
+/*** Algebra utils ***/
+function xtx(X){ return mul(transpose(X), X); }
+function xty(X,y){
+  const XT = transpose(X), p = XT.length;
+  const v = new Array(p).fill(0);
+  for (let j=0;j<p;j++){
+    let s=0; for (let i=0;i<y.length;i++) s += XT[j][i]*y[i];
+    v[j]=s;
+  }
+  return v;
+}
+function eye(n){ return Array.from({length:n}, (_,i)=>Array.from({length:n},(_,j)=>i===j?1:0)); }
+function addDiag(A, lam){
+  const B = A.map(row=>row.slice());
+  for (let i=0;i<B.length;i++) B[i][i] += lam;
+  return B;
+}
+function solveSymPosDef(A, b) {
+  // Cholesky solve
+  const n = A.length;
+  const L = Array.from({length:n}, ()=>Array(n).fill(0));
+  for (let i=0;i<n;i++){
+    for (let j=0;j<=i;j++){
+      let s = A[i][j];
+      for (let k=0;k<j;k++) s -= L[i][k]*L[j][k];
+      if (i===j) {
+        if (s<=0) throw Error("Matrix not SPD");
+        L[i][j] = Math.sqrt(s);
+      } else {
+        L[i][j] = s / L[j][j];
+      }
+    }
+  }
+  // Solve L z = b
+  const z = new Array(n).fill(0);
+  for (let i=0;i<n;i++){
+    let s=b[i]; for (let k=0;k<i;k++) s -= L[i][k]*z[k];
+    z[i]=s/L[i][i];
+  }
+  // Solve L^T x = z
+  const x = new Array(n).fill(0);
+  for (let i=n-1;i>=0;i--){
+    let s=z[i]; for (let k=i+1;k<n;k++) s -= L[k][i]*x[k];
+    x[i]=s/L[i][i];
+  }
+  return x;
+}
+
+/*** Ridge: closed form (with centered X,y so intercept=0) ***/
+function ridge(X, y, lam){
+  // β = (XᵀX + λ I)^{-1} Xᵀ y
+  const p = X[0].length;
+  const XtX = xtx(X);
+  const A = addDiag(XtX, lam);
+  const b = xty(X,y);
+  return solveSymPosDef(A,b);
+}
+
+/*** Lasso: coordinate descent with soft-thresholding. Assumes centered X,y. ***/
+function lassoCD(X, y, lam, maxIter=200, tol=1e-6, warm=null){
+  const n = X.length, p = X[0].length;
+  const XT = transpose(X);
+  // Precompute column squared norms
+  const colNorm2 = XT.map(col => col.reduce((s,c)=>s+c*c,0));
+  let beta = warm ? warm.slice() : Array(p).fill(0);
+  for (let it=0; it<maxIter; it++){
+    let maxDelta = 0;
+    for (let j=0;j<p;j++){
+      // partial residual = y - Xβ + x_j β_j
+      let rho = 0;
+      for (let i=0;i<n;i++){
+        let xb = 0;
+        for (let k=0;k<p;k++) xb += X[i][k]*beta[k];
+        const r_i = y[i] - xb + X[i][j]*beta[j];
+        rho += X[i][j]*r_i;
+      }
+      const bj_old = beta[j];
+      const denom = colNorm2[j] || 1;
+      // soft threshold
+      const z = rho / denom;
+      const t = lam / denom;
+      beta[j] = Math.sign(z) * Math.max(Math.abs(z) - t, 0);
+      maxDelta = Math.max(maxDelta, Math.abs(beta[j] - bj_old));
+    }
+    if (maxDelta < tol) break;
+  }
+  return beta;
+}
+
+/*** Metrics ***/
+function mse(X,y,b){
+  let s=0;
+  for (let i=0;i<X.length;i++){
+    let yhat=0;
+    for (let j=0;j<b.length;j++) yhat += X[i][j]*b[j];
+    const e = y[i]-yhat; s += e*e;
+  }
+  return s / X.length;
+}
+function norm1(v){ return v.reduce((s,x)=>s+Math.abs(x),0); }
+function norm2(v){ return Math.sqrt(v.reduce((s,x)=>s+x*x,0)); }
+
+/*** Visualization (D3) ***/
+const svg = d3.select("#chart");
+const W = 980, H = 420, pad = 44;
+const innerW = W - 2*pad, innerH = H - 2*pad;
+const g = svg.append("g").attr("transform", `translate(${pad},${pad})`);
+g.append("line").attr("class","zero-line")
+  .attr("x1", 0).attr("x2", innerW).attr("y1", innerH/2).attr("y2", innerH/2);
+
+const x = d3.scaleBand().padding(0.25);
+const yScale = d3.scaleLinear().nice();
+const color = d3.scaleOrdinal(d3.schemeTableau10);
+
+const xAxisG = g.append("g").attr("transform", `translate(0,${innerH})`).attr("class","axis");
+const yAxisG = g.append("g").attr("class","axis");
+
+// 2D smallest-coef plot setup
+const svg2 = d3.select("#coef2d");
+const W2 = 420, H2 = 420, pad2 = 44;
+const innerW2 = W2 - 2*pad2, innerH2 = H2 - 2*pad2;
+const g2 = svg2.append("g").attr("transform", `translate(${pad2},${pad2})`);
+const x2 = d3.scaleLinear();
+const y2 = d3.scaleLinear();
+const x2AxisG = g2.append("g").attr("transform", `translate(0,${innerH2})`).attr("class","axis");
+const y2AxisG = g2.append("g").attr("class","axis");
+// axes labels
+const x2Label = svg2.append("text").attr("class","small")
+  .attr("x", pad2 + innerW2/2).attr("y", H2 - 6).attr("text-anchor","middle");
+const y2Label = svg2.append("text").attr("class","small")
+  .attr("x", 10).attr("y", pad2 - 10).attr("text-anchor","start");
+
+let state = {
+  data: null,
+  lastLasso: null
+};
+
+function init() {
+  state.data = generateData(120,6,1234);
+  color.domain(d3.range(state.data.X[0].length).map(i=>"β"+(i+1)));
+  d3.select("#trueb").text(JSON.stringify(state.data.betaTrue));
+  drawLegend();
+  update(+d3.select("#lambda").property("value"));
+}
+
+function drawLegend(){
+  const items = color.domain();
+  const legend = d3.select("#legend").selectAll(".badge").data(items, d=>d);
+  const enter = legend.enter().append("span").attr("class","badge");
+  enter.append("span").attr("class","swatch").style("background", d=>color(d));
+  enter.append("span").text(d=>d);
+  legend.exit().remove();
+}
+
+function update(lam){
+  const {X,y} = state.data;
+  const pen = document.querySelector('input[name="pen"]:checked').value;
+  const rawBeta = (pen === "ridge")
+    ? ridge(X, y, lam)
+    : (state.lastLasso = lassoCD(X, y, lam, 400, 1e-6, state.lastLasso));
+  // Guard against NaNs/infinities from numeric issues
+  const beta = rawBeta.map(v => Number.isFinite(v) ? v : 0);
+
+  // scales
+  const labels = beta.map((_,i)=>"β"+(i+1));
+  const maxAbs = Math.max(1e-6, d3.max(beta, d=>Math.abs(d)) || 0);
+  x.domain(labels).range([0, innerW]);
+  yScale.domain([ -maxAbs*1.15, maxAbs*1.15 ]).range([innerH, 0]);
+
+  // axes
+  xAxisG.call(d3.axisBottom(x));
+  yAxisG.call(d3.axisLeft(yScale));
+
+  // bars
+  const bars = g.selectAll(".bar").data(beta, (_,i)=>i);
+  const bw = x.bandwidth();
+  const y0 = yScale(0);
+  bars.enter()
+    .append("rect")
+    .attr("class","bar")
+    .attr("x", (_,i)=>x(labels[i]))
+    .attr("width", bw)
+    .attr("y", y0)
+    .attr("height", 0)
+    .attr("fill", (_,i)=>color("β"+(i+1)))
+    .merge(bars)
+    .transition().duration(120)
+    .attr("x", (_,i)=>x(labels[i]))
+    .attr("width", bw)
+    .attr("y", d => {
+      const yd = yScale(d);
+      return (Number.isFinite(yd) && d>=0) ? yd : y0;
+    })
+    .attr("height", d => {
+      const yd = yScale(d);
+      return Number.isFinite(yd) ? Math.abs(yd - y0) : 0;
+    });
+  bars.exit().remove();
+
+  // labels
+  const labs = g.selectAll(".coef-label").data(beta,(_,i)=>i);
+  labs.enter().append("text").attr("class","coef-label")
+    .attr("x", (_,i)=>x(labels[i]) + bw/2)
+    .attr("y", y0 - 6)
+    .text((d)=>d.toFixed(3))
+    .merge(labs)
+    .transition().duration(120)
+    .attr("x", (_,i)=>x(labels[i]) + bw/2)
+    .attr("y", d => {
+      const yd = yScale(d);
+      if (!Number.isFinite(yd)) return y0 - 6;
+      return d>=0 ? yd - 6 : yd + 14;
+    })
+    .text((d)=>d.toFixed(3));
+  labs.exit().remove();
+
+  // diagnostics
+  d3.select("#mse").text(mse(X,y,beta).toFixed(4));
+  d3.select("#l1").text(norm1(beta).toFixed(4));
+  d3.select("#l2").text(norm2(beta).toFixed(4));
+  d3.select("#penKind").text(pen === "ridge" ? "Ridge" : "Lasso");
+  d3.select("#lamval").text(lam.toFixed(1));
+  d3.select("#lamval2").text(lam.toFixed(1));
+
+  // table
+  renderCoefTable(beta);
+
+  // 2D smallest two coefficients plot
+  renderSmallest2D(beta, pen);
+}
+
+function renderCoefTable(beta){
+  const labels = beta.map((_,i)=>"β"+(i+1));
+  const rows = labels.map((name,i)=>({name, value: beta[i]}));
+  const container = d3.select("#coefTable");
+  container.selectAll("*").remove();
+  const table = container.append("table");
+  const thead = table.append("thead").append("tr");
+  thead.append("th").text("Coefficient");
+  thead.append("th").attr("class","wide").text("Estimate");
+  const tbody = table.append("tbody");
+  const tr = tbody.selectAll("tr").data(rows).enter().append("tr");
+  tr.append("td").style("text-align","left").html(d => `
+      <span class="swatch" style="display:inline-block;background:${color(d.name)}"></span>
+      &nbsp;${d.name}`);
+  tr.append("td").text(d => d.value.toFixed(6));
+}
+
+function renderSmallest2D(beta, pen){
+  // indices of two smallest absolute coefficients
+  const idx = d3.range(beta.length).sort((a,b)=>d3.ascending(Math.abs(beta[a]), Math.abs(beta[b]))).slice(0,2);
+  const i1 = idx[0], i2 = idx[1];
+  const b1 = beta[i1], b2 = beta[i2];
+  const labels = ["β"+(i1+1), "β"+(i2+1)];
+
+  // scales (symmetric domains around 0)
+  const maxAbs = Math.max(1e-6, Math.max(Math.abs(b1), Math.abs(b2)));
+  const c = Math.abs(b1) + Math.abs(b2); // L1 norm radius so point lies on diamond
+  const lim = Math.max(maxAbs, c) * 1.3;
+  x2.domain([-lim, lim]).range([0, innerW2]).nice();
+  y2.domain([-lim, lim]).range([innerH2, 0]).nice();
+  x2AxisG.call(d3.axisBottom(x2));
+  y2AxisG.call(d3.axisLeft(y2));
+
+  x2Label.text(labels[0]);
+  y2Label.text(labels[1]);
+
+  // penalty shape (circle for ridge, square for lasso), passing through the point
+  g2.selectAll('.pen-shape').remove();
+  if (pen === 'ridge') {
+    const r = Math.sqrt(b1*b1 + b2*b2);
+    const pxr = Math.abs(x2(r) - x2(0));
+    g2.append('circle').attr('class','pen-shape')
+      .attr('cx', x2(0)).attr('cy', y2(0)).attr('r', pxr)
+      .attr('fill','none').attr('stroke','#888').attr('stroke-width',1.5);
+  } else {
+    // L1 ball (diamond) with |β1| + |β2| = c passing through the point
+    const verts = [
+      [0, c], [c, 0], [0, -c], [-c, 0]
+    ].map(([vx,vy]) => [x2(vx), y2(vy)]);
+    const pts = verts.map(p => p.join(',')).join(' ');
+    g2.append('polygon').attr('class','pen-shape')
+      .attr('points', pts)
+      .attr('fill','none').attr('stroke','#888').attr('stroke-width',1.5);
+  }
+
+  // point for (b1, b2)
+  const pt = g2.selectAll('.coef-pt').data([{x:b1, y:b2, i1, i2}]);
+  pt.enter().append('circle').attr('class','coef-pt')
+    .attr('r', 4)
+    .attr('fill', color("β"+(i1+1)))
+    .merge(pt)
+    .attr('cx', d => x2(d.x))
+    .attr('cy', d => y2(d.y));
+  pt.exit().remove();
+
+  // info text
+  d3.select('#coef2dInfo').html(
+    `Using coefficients <code class="k">${labels[0]}</code> and <code class="k">${labels[1]}</code>.<br>`+
+    `Point = (${b1.toFixed(3)}, ${b2.toFixed(3)}).`
+  );
+}
+
+/*** UI wiring ***/
+document.querySelectorAll('input[name="pen"]').forEach(r =>
+  r.addEventListener('change', () => update(+document.getElementById('lambda').value)));
+
+document.getElementById('lambda').addEventListener('input', e => update(+e.target.value));
+
+document.getElementById('regen').addEventListener('click', () => {
+  const deterministic = document.getElementById('seeded').checked;
+  const seed = deterministic ? 1234 : Math.floor(Math.random()*1e9);
+  state.data = generateData(120,6,seed);
+  state.lastLasso = null; // reset warm start
+  d3.select("#trueb").text(JSON.stringify(state.data.betaTrue));
+  update(+document.getElementById('lambda').value);
+});
+
+// kick off
+init();
+</script>
