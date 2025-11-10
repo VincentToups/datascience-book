@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>D3 Scatter with Clusters</title>
+</head>
+<body>
+  X: <select id="x-select"></select>
+  Y: <select id="y-select"></select>
+  <br>
+  <svg width="500" height="500" viewBox="-1 -1 8 8" preserveAspectRatio="xMidYMid meet"></svg>
+
+  <script type="module">
+    import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+
+    const svg  = d3.select("svg");
+    const cols = ["intelligence","strength","speed","durability","energy projection","fighting skills"];
+
+    const xSelect = d3.select("#x-select");
+    const ySelect = d3.select("#y-select");
+
+    // populate dropdowns
+    xSelect.selectAll("option")
+      .data(cols)
+      .join("option")
+      .attr("value", d => d)
+      .property("selected", d => d === "intelligence")
+      .text(d => d);
+
+    ySelect.selectAll("option")
+      .data(cols)
+      .join("option")
+      .attr("value", d => d)
+      .property("selected", d => d === "strength")
+      .text(d => d);
+
+    let currentX = "intelligence";
+    let currentY = "strength";
+
+    const toNum = (d, k) => d[k] = +d[k];
+
+    // labels
+    const xLabel = svg.append("text")
+      .attr("x", 3)
+      .attr("y", -0.7)
+      .attr("text-anchor", "middle")
+      .attr("font-size", 0.25);
+
+    const yLabel = svg.append("text")
+      .attr("x", -0.7)
+      .attr("y", 3)
+      .attr("text-anchor", "middle")
+      .attr("font-size", 0.25)
+      .attr("transform", "rotate(-90,-0.7,3)");
+
+    const updateLabels = () => {
+      xLabel.text(currentX);
+      yLabel.text(currentY);
+    };
+
+    // Load character attributes and cluster assignments
+    Promise.all([
+      d3.csv("source_data/tidy_wide_characters.csv", row => {
+        cols.forEach(k => toNum(row, k));
+        return row;
+      }),
+      d3.csv("source_data/clustered_characters_gap.csv", row => {
+        row.cluster = +row.cluster;
+        return row;
+      })
+    ]).then(([data, clusters]) => {
+      // Map character_name -> cluster id
+      const clusterMap = new Map(clusters.map(d => [d.character_name, d.cluster]));
+
+      // Build a color scale from present cluster ids
+      const clusterIds = Array.from(new Set(clusters.map(d => d.cluster))).sort((a, b) => a - b);
+      const color = d3.scaleOrdinal(d3.schemeTableau10).domain(clusterIds);
+
+      // precompute jittered positions for each trait & axis
+      data.forEach(d => {
+        d._jitter = {};
+        cols.forEach(k => {
+          d._jitter[k] = {
+            x: d[k] - Math.random(),
+            y: d[k] - Math.random()
+          };
+        });
+      });
+
+      const points = svg.selectAll("circle")
+        .data(data)
+        .join("circle")
+        .attr("r", 0.08)
+        .attr("fill", d => {
+          const c = clusterMap.get(d.character_name);
+          return c != null ? color(c) : "#888"; // gray if missing
+        });
+
+      const redrawPoints = (duration = 0) => {
+        const sel = duration ? points.transition().duration(duration) : points;
+        sel.attr("cx", d => d._jitter[currentX].x)
+           .attr("cy", d => d._jitter[currentY].y);
+      };
+
+      // initial draw
+      updateLabels();
+      redrawPoints(0);
+
+      xSelect.on("change", event => {
+        currentX = event.target.value;
+        updateLabels();
+        redrawPoints(750);
+      });
+
+      ySelect.on("change", event => {
+        currentY = event.target.value;
+        updateLabels();
+        redrawPoints(750);
+      });
+    }).catch(console.error);
+  </script>
+</body>
+</html>
+

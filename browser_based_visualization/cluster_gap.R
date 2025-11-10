@@ -1,0 +1,105 @@
+#!/usr/bin/env Rscript
+
+# Cluster characters in 6D attribute space using clusGap
+# - Input:  source_data/tidy_wide_characters.csv
+# - Output: source_data/clustered_characters_gap.csv
+#
+# Output columns:
+#   character_name, cluster, k
+
+suppressPackageStartupMessages({
+  # 'cluster' is a recommended package; try to install if missing
+  if (!requireNamespace("cluster", quietly = TRUE)) {
+    message("Package 'cluster' not found. Attempting to install...")
+    try(install.packages("cluster"), silent = TRUE)
+  }
+})
+
+suppressPackageStartupMessages({
+  library(cluster)
+  library(stats)
+  library(utils)
+})
+
+input_path <- "source_data/tidy_wide_characters.csv"
+output_path <- "source_data/clustered_characters_gap.csv"
+
+if (!file.exists(input_path)) {
+  stop(sprintf("Input file not found at '%s'", input_path))
+}
+
+df <- read.csv(input_path, stringsAsFactors = FALSE, check.names = FALSE)
+
+if (!"character_name" %in% names(df)) {
+  stop("Input data must contain a 'character_name' column for joining.")
+}
+
+name_col <- df$character_name
+
+# Select numeric attribute columns
+num_cols <- vapply(df, is.numeric, logical(1))
+num_cols[match("character_name", names(num_cols))] <- FALSE
+X <- df[, num_cols, drop = FALSE]
+
+if (ncol(X) == 0) {
+  stop("No numeric columns found for clustering.")
+}
+
+# Remove zero-variance columns (they break scaling/kmeans usefulness)
+sd_vec <- apply(X, 2, stats::sd, na.rm = TRUE)
+keep_cols <- sd_vec > 0 & !is.na(sd_vec)
+if (!all(keep_cols)) {
+  removed <- names(X)[!keep_cols]
+  message(sprintf("Dropping %d zero-variance columns: %s", sum(!keep_cols), paste(removed, collapse = ", ")))
+  X <- X[, keep_cols, drop = FALSE]
+}
+
+if (ncol(X) == 0) {
+  stop("All numeric columns had zero variance; cannot cluster.")
+}
+
+# Remove rows with missing values in the features
+row_keep <- stats::complete.cases(X)
+if (!all(row_keep)) {
+  message(sprintf("Removing %d rows with missing values in features.", sum(!row_keep)))
+}
+X_complete <- X[row_keep, , drop = FALSE]
+names_complete <- name_col[row_keep]
+
+n <- nrow(X_complete)
+if (n < 2) {
+  stop(sprintf("Not enough complete rows for clustering (n = %d).", n))
+}
+
+# Scale features to mean 0, sd 1
+X_scaled <- scale(X_complete)
+
+# Configure gap statistic parameters
+k_max <- max(2, min(12, n - 1))
+B_boot <- 50  # adjust for speed vs. stability
+
+set.seed(42)
+
+# Wrapper for k-means with signature expected by clusGap: FUN(x, k)
+km_fun <- function(x, k) stats::kmeans(x, centers = k, nstart = 25, iter.max = 100)
+
+message(sprintf("Computing gap statistic for k = 1..%d (B=%d)", k_max, B_boot))
+gap <- cluster::clusGap(X_scaled, FUN = km_fun, K.max = k_max, B = B_boot, verbose = interactive())
+
+# Choose optimal k via the 'firstSEmax' rule
+opt_k <- cluster::maxSE(gap$Tab[, "gap"], gap$Tab[, "SE.sim"], method = "firstSEmax")
+
+message(sprintf("Selected k = %d via gap statistic.", opt_k))
+
+# Final clustering using selected k
+final_km <- stats::kmeans(X_scaled, centers = opt_k, nstart = 25, iter.max = 100)
+
+out <- data.frame(
+  character_name = names_complete,
+  cluster = as.integer(final_km$cluster),
+  k = as.integer(opt_k),
+  stringsAsFactors = FALSE
+)
+
+utils::write.csv(out, file = output_path, row.names = FALSE)
+message(sprintf("Wrote %d clustered rows to %s", nrow(out), output_path))
